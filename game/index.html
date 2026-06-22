@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RICHA FARM — Play & Earn</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  background: #080e08;
+  color: #e0ffe0;
+  min-height: 100vh;
+}
+
+/* ── Header ─────────────────────────────── */
+header {
+  background: #0c1a0c;
+  border-bottom: 1px solid #1c361c;
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.logo {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #4ade80;
+  letter-spacing: -0.5px;
+}
+
+.logo span { color: #fbbf24; }
+
+.header-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+.balance-pill {
+  background: #1a3a1a;
+  border: 1px solid #4ade80;
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #4ade80;
+}
+
+.mining-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #1a2a1a;
+  border: 1px solid #22c55e55;
+  border-radius: 20px;
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  color: #86efac;
+}
+
+.dot {
+  width: 8px; height: 8px;
+  background: #22c55e;
+  border-radius: 50%;
+  animation: blink 1.5s ease-in-out infinite;
+}
+
+@keyframes blink {
+  0%,100% { opacity:1; transform:scale(1); }
+  50%      { opacity:.4; transform:scale(.7); }
+}
+
+/* ── Layout ─────────────────────────────── */
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 270px;
+  gap: 14px;
+  padding: 14px;
+  max-width: 980px;
+  margin: 0 auto;
+}
+
+@media(max-width:680px) {
+  .layout { grid-template-columns: 1fr; }
+}
+
+/* ── Cards ───────────────────────────────── */
+.card {
+  background: #0c1a0c;
+  border: 1px solid #1c361c;
+  border-radius: 14px;
+  padding: 16px;
+}
+
+.card-title {
+  font-size: .75rem;
+  font-weight: 700;
+  color: #86efac;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  margin-bottom: 14px;
+}
+
+/* ── Farm grid ───────────────────────────── */
+.farm-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.plot {
+  aspect-ratio: 1;
+  min-height: 82px;
+  background: #131f13;
+  border: 2px solid #1c361c;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all .15s;
+  position: relative;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.plot:active { transform: scale(.95); }
+
+.plot:hover:not(.locked):not(.growing) {
+  border-color: #4ade80;
+  background: #1a2e1a;
+}
+
+.plot.growing  { border-color: #65a30d; cursor: default; }
+
+.plot.ready {
+  border-color: #fbbf24;
+  background: #1e2a10;
+  animation: shine .9s ease-in-out infinite alternate;
+}
+
+@keyframes shine {
+  from { box-shadow: 0 0 6px #fbbf2430; }
+  to   { box-shadow: 0 0 18px #fbbf2470; }
+}
+
+.plot.locked { opacity: .35; cursor: not-allowed; }
+
+.plot-icon  { font-size: 2rem; line-height: 1; }
+.plot-label {
+  font-size: .6rem;
+  color: #86efac;
+  margin-top: 4px;
+  text-align: center;
+  line-height: 1.3;
+}
+
+.pbar {
+  position: absolute;
+  bottom: 7px;
+  left: 9px; right: 9px;
+  height: 3px;
+  background: #1c361c;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.pbar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4ade80, #86efac);
+  border-radius: 2px;
+  transition: width .4s linear;
+}
+
+/* ── Crop selector ───────────────────────── */
+.crop-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.crop-btn {
+  background: #131f13;
+  border: 2px solid #1c361c;
+  border-radius: 10px;
+  padding: 8px 4px;
+  cursor: pointer;
+  text-align: center;
+  transition: all .15s;
+  color: #e0ffe0;
+}
+
+.crop-btn:hover:not(.locked-crop) { border-color: #4ade80; background: #1a2e1a; }
+.crop-btn.active { border-color: #4ade80; background: #1a2e1a; }
+.crop-btn.locked-crop { opacity: .45; cursor: not-allowed; }
+
+.cb-icon { font-size: 1.4rem; }
+.cb-name { font-size: .58rem; color: #86efac; margin-top: 2px; }
+.cb-reward { font-size: .58rem; color: #4ade80; font-weight: 700; }
+.cb-cost { font-size: .56rem; color: #fbbf24; }
+.cb-lock { font-size: .55rem; color: #f87171; }
+.cb-time { font-size: .55rem; color: #94a3b8; }
+
+/* ── Sidebar ─────────────────────────────── */
+.sidebar { display: flex; flex-direction: column; gap: 12px; }
+
+/* Mining */
+.mining-center { text-align: center; }
+.hr-value {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #4ade80;
+  margin: 6px 0 2px;
+}
+.xmr-line { font-size: .78rem; color: #86efac; margin-bottom: 6px; }
+.mining-note {
+  font-size: .65rem;
+  color: #86efac;
+  opacity: .55;
+  line-height: 1.5;
+  border-top: 1px solid #1c361c;
+  padding-top: 8px;
+  margin-top: 4px;
+}
+
+/* Upgrades */
+.upg-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid #1c361c;
+}
+.upg-row:last-child { border-bottom: none; }
+.upg-info { flex: 1; min-width: 0; }
+.upg-name { font-size: .83rem; }
+.upg-desc { font-size: .65rem; color: #86efac; opacity: .65; margin-top: 1px; }
+.upg-btn {
+  background: #1a3a1a;
+  border: 1px solid #4ade80;
+  color: #4ade80;
+  border-radius: 8px;
+  padding: 5px 10px;
+  cursor: pointer;
+  font-size: .72rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: all .15s;
+  flex-shrink: 0;
+}
+.upg-btn:hover:not(:disabled) { background: #4ade80; color: #080e08; }
+.upg-btn:disabled { opacity: .4; cursor: default; }
+.upg-btn.done { border-color: #22c55e; color: #22c55e; background: #0c1a0c; cursor: default; }
+
+/* Stats */
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 0;
+  border-bottom: 1px solid #1c361c;
+  font-size: .8rem;
+}
+.stat-row:last-child { border-bottom: none; }
+.stat-l { color: #86efac; opacity: .8; }
+.stat-v { color: #4ade80; font-weight: 700; }
+
+/* Wallet */
+.wallet-addr {
+  font-size: .75rem;
+  color: #86efac;
+  margin-bottom: 10px;
+  word-break: break-all;
+}
+.wallet-btn {
+  width: 100%;
+  background: linear-gradient(135deg,#7c3aed,#4f46e5);
+  border: none;
+  color: #fff;
+  border-radius: 10px;
+  padding: 11px;
+  cursor: pointer;
+  font-size: .85rem;
+  font-weight: 700;
+  transition: all .2s;
+  letter-spacing: .3px;
+}
+.wallet-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 18px #7c3aed44; }
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 24px; left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: #4ade80;
+  color: #080e08;
+  padding: 10px 22px;
+  border-radius: 24px;
+  font-weight: 700;
+  font-size: .88rem;
+  transition: transform .3s cubic-bezier(.34,1.56,.64,1);
+  z-index: 999;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+/* Floating reward text */
+.flt {
+  position: fixed;
+  pointer-events: none;
+  font-weight: 800;
+  font-size: 1.1rem;
+  color: #4ade80;
+  text-shadow: 0 1px 4px #0008;
+  animation: fltUp .9s ease-out forwards;
+  z-index: 998;
+}
+@keyframes fltUp {
+  0%   { opacity:1; transform:translateY(0) scale(1); }
+  100% { opacity:0; transform:translateY(-55px) scale(.8); }
+}
+</style>
+</head>
+<body>
+
+<!-- ── Header ─────────────────────────────── -->
+<header>
+  <div class="logo">🌾 RICHA<span>FARM</span></div>
+  <div class="header-right">
+    <div class="balance-pill" id="bal">💰 0 RICHA</div>
+    <div class="mining-pill">
+      <div class="dot"></div>
+      <span>XMR <span id="hr-head">--</span> H/s</span>
+    </div>
+  </div>
+</header>
+
+<!-- ── Main ──────────────────────────────── -->
+<div class="layout">
+
+  <!-- Left: farm -->
+  <div>
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-title">🌱 Ваша ферма</div>
+      <div class="farm-grid" id="farm"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🌿 Выберите культуру для посева</div>
+      <div class="crop-grid" id="crops"></div>
+    </div>
+  </div>
+
+  <!-- Right: sidebar -->
+  <div class="sidebar">
+
+    <div class="card">
+      <div class="card-title">⛏ XMR Майнинг</div>
+      <div class="mining-center">
+        <div class="hr-value" id="hr-big">-- H/s</div>
+        <div class="xmr-line">Накоплено: <b id="xmr">0.000000</b> XMR</div>
+        <div class="xmr-line" style="color:#fbbf24">≈ $<span id="xmr-usd">0.00</span></div>
+        <div class="mining-note">
+          Демо-режим. Установи<br>
+          <b>RICHA App</b> для реального майнинга<br>
+          на своём компьютере.
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">⬆ Улучшения</div>
+      <div id="upgrades"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📊 Статистика</div>
+      <div id="stats"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">👛 Solana Кошелёк</div>
+      <div class="wallet-addr" id="waddr">Не подключён</div>
+      <button class="wallet-btn" onclick="connectWallet()">
+        🔮 Подключить Phantom
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════
+
+const CROPS = {
+  wheat:   { icon:'🌾', name:'Пшеница',     time:5000,  reward:10,  seed:0,  unlock:0    },
+  corn:    { icon:'🌽', name:'Кукуруза',    time:14000, reward:32,  seed:5,  unlock:60   },
+  flower:  { icon:'🌻', name:'Подсолнух',   time:28000, reward:75,  seed:20, unlock:250  },
+  crystal: { icon:'💎', name:'Кристалл',    time:55000, reward:190, seed:50, unlock:1200 },
+};
+
+const UPGRADES = [
+  { id:'p3',    name:'+ 3 грядки',        desc:'Открывает 3 новые грядки',       cost:120,  fn:()=>addPlots(3)          },
+  { id:'fert',  name:'Удобрение 2×',      desc:'Всё растёт в 2 раза быстрее',    cost:280,  fn:()=>{ G.speed=2; }       },
+  { id:'p6',    name:'+ 6 грядок',        desc:'Открывает 6 новых грядок',       cost:700,  fn:()=>addPlots(6)          },
+  { id:'auto',  name:'Авто-сбор',         desc:'Собирает урожай автоматически',  cost:1400, fn:()=>{ G.auto=true; }     },
+  { id:'fert4', name:'Удобрение 4×',      desc:'Всё растёт в 4 раза быстрее',   cost:3500, fn:()=>{ G.speed=4; }       },
+  { id:'p12',   name:'Мегаферма +12',     desc:'12 дополнительных грядок',       cost:6000, fn:()=>addPlots(12)         },
+];
+
+// ═══════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════
+
+let G = {
+  tokens: 0, total: 0, harvests: 0,
+  plots: [], bought: {},
+  crop: 'wheat', speed: 1, auto: false,
+  xmr: 0, start: Date.now(),
+};
+
+function save() {
+  try { localStorage.setItem('rf2', JSON.stringify(G)); } catch(e){}
+}
+function load() {
+  try {
+    const d = JSON.parse(localStorage.getItem('rf2')||'{}');
+    if (d.tokens != null) Object.assign(G, d);
+  } catch(e){}
+  if (!G.plots.length) { for(let i=0;i<6;i++) G.plots.push(mk()); }
+}
+const mk = () => ({ s:'empty', crop:null, t:null });
+
+function addPlots(n) {
+  for(let i=0;i<n;i++) G.plots.push(mk());
+  renderFarm();
+}
+
+// ═══════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════
+
+function renderFarm() {
+  const el = document.getElementById('farm');
+  el.innerHTML = '';
+  G.plots.forEach((p, i) => {
+    const d = document.createElement('div');
+    d.className = 'plot ' + p.s;
+    d.onclick = () => tapPlot(i, d);
+
+    if (p.s === 'empty') {
+      d.innerHTML = '<div class="plot-icon">🟫</div><div class="plot-label">Нажми<br>посадить</div>';
+    } else if (p.s === 'growing') {
+      const c = CROPS[p.crop];
+      const gt = c.time / G.speed;
+      const pct = Math.min(100, (Date.now()-p.t)/gt*100);
+      d.innerHTML = `<div class="plot-icon">${c.icon}</div>
+        <div class="plot-label">Растёт…</div>
+        <div class="pbar"><div class="pbar-fill" id="pb${i}" style="width:${pct}%"></div></div>`;
+    } else if (p.s === 'ready') {
+      const c = CROPS[p.crop];
+      d.innerHTML = `<div class="plot-icon">${c.icon}</div>
+        <div class="plot-label" style="color:#fbbf24">Готово!<br>+${c.reward}</div>`;
+    }
+    el.appendChild(d);
+  });
+
+  // Crop buttons
+  const ce = document.getElementById('crops');
+  ce.innerHTML = '';
+  Object.entries(CROPS).forEach(([k,c]) => {
+    const b = document.createElement('div');
+    const locked = G.total < c.unlock;
+    b.className = 'crop-btn' + (G.crop===k?' active':'') + (locked?' locked-crop':'');
+    b.innerHTML = `<div class="cb-icon">${c.icon}</div>
+      <div class="cb-name">${c.name}</div>
+      <div class="cb-reward">+${c.reward} RCH</div>
+      <div class="cb-time">${c.time/1000}с</div>
+      ${c.seed?`<div class="cb-cost">семя ${c.seed} RCH</div>`:'<div class="cb-cost">бесплатно</div>'}
+      ${locked?`<div class="cb-lock">🔒 ${c.unlock} RCH</div>`:''}`;
+    if (!locked) b.onclick = () => { G.crop=k; renderFarm(); };
+    ce.appendChild(b);
+  });
+}
+
+function renderUpgrades() {
+  const el = document.getElementById('upgrades');
+  el.innerHTML = '';
+  UPGRADES.forEach(u => {
+    const done = G.bought[u.id];
+    const ok   = G.tokens >= u.cost;
+    el.innerHTML += `
+      <div class="upg-row">
+        <div class="upg-info">
+          <div class="upg-name">${u.name}</div>
+          <div class="upg-desc">${u.desc}</div>
+        </div>
+        <button class="upg-btn${done?' done':''}"
+          ${done||!ok?'disabled':''}
+          onclick="buyUpg('${u.id}')">
+          ${done?'✓':fmt(u.cost)+' RCH'}
+        </button>
+      </div>`;
+  });
+}
+
+function renderStats() {
+  const sec = Math.floor((Date.now()-G.start)/1000);
+  const hh=Math.floor(sec/3600), mm=Math.floor(sec%3600/60), ss=sec%60;
+  const time = `${pad(hh)}:${pad(mm)}:${pad(ss)}`;
+  document.getElementById('stats').innerHTML = [
+    ['Баланс',         fmt(G.tokens)+' RCH'],
+    ['Всего заработано',fmt(G.total)+' RCH'],
+    ['Урожаев собрано', G.harvests],
+    ['Грядок',          G.plots.length],
+    ['Скорость роста',  G.speed+'×'],
+    ['Авто-сбор',       G.auto?'✓ Активен':'Не куплен'],
+    ['Сессия',          time],
+  ].map(([l,v])=>
+    `<div class="stat-row"><span class="stat-l">${l}</span><span class="stat-v">${v}</span></div>`
+  ).join('');
+}
+
+const pad = n => String(n).padStart(2,'0');
+function fmt(n) {
+  if(n>=1e9) return (n/1e9).toFixed(2)+'B';
+  if(n>=1e6) return (n/1e6).toFixed(2)+'M';
+  if(n>=1e3) return (n/1e3).toFixed(1)+'K';
+  return Math.floor(n).toString();
+}
+
+// ═══════════════════════════════════════
+// INTERACTIONS
+// ═══════════════════════════════════════
+
+function tapPlot(i, el) {
+  const p = G.plots[i];
+  const c = CROPS[G.crop];
+
+  if (p.s === 'empty') {
+    if (G.total < c.unlock)  { toast('Разблокируется при '+c.unlock+' RCH'); return; }
+    if (G.tokens < c.seed)   { toast('Нужно '+c.seed+' RCH на семена'); return; }
+    G.tokens -= c.seed;
+    p.s = 'growing'; p.crop = G.crop; p.t = Date.now();
+    renderFarm(); upd();
+  } else if (p.s === 'ready') {
+    harvest(i, el);
+  }
+  save();
+}
+
+function harvest(i, el) {
+  const p = G.plots[i];
+  const c = CROPS[p.crop];
+  G.tokens += c.reward;
+  G.total  += c.reward;
+  G.harvests++;
+  p.s = 'empty'; p.crop = null; p.t = null;
+  if (el) {
+    const r = el.getBoundingClientRect();
+    fly('+'+c.reward+' RCH', r.left+r.width/2, r.top+window.scrollY);
+  }
+  upd(); renderUpgrades(); save();
+}
+
+function buyUpg(id) {
+  const u = UPGRADES.find(x=>x.id===id);
+  if (!u||G.bought[id]||G.tokens<u.cost) return;
+  G.tokens -= u.cost;
+  G.bought[id] = true;
+  u.fn();
+  toast('✓ '+u.name+' куплено!');
+  renderUpgrades(); upd(); save();
+}
+
+function upd() {
+  document.getElementById('bal').textContent = '💰 '+fmt(G.tokens)+' RICHA';
+  renderStats();
+}
+
+// ═══════════════════════════════════════
+// TICK (every 400ms)
+// ═══════════════════════════════════════
+
+function tick() {
+  let changed = false;
+  G.plots.forEach((p,i) => {
+    if (p.s !== 'growing') return;
+    const gt = CROPS[p.crop].time / G.speed;
+    if (Date.now()-p.t >= gt) {
+      p.s = 'ready'; changed = true;
+      if (G.auto) { harvest(i,null); changed=true; }
+    } else {
+      const pb = document.getElementById('pb'+i);
+      if (pb) pb.style.width = Math.min(100,(Date.now()-p.t)/gt*100)+'%';
+    }
+  });
+  if (changed) { renderFarm(); renderUpgrades(); }
+
+  // Simulated XMR mining display
+  const hr = 820 + Math.sin(Date.now()/2500)*80 + Math.random()*40;
+  G.xmr += hr * 0.4 / 1e9 / 60;
+  const xmrUsd = G.xmr * 165;
+
+  document.getElementById('hr-big').textContent  = Math.round(hr)+' H/s';
+  document.getElementById('hr-head').textContent = Math.round(hr);
+  document.getElementById('xmr').textContent     = G.xmr.toFixed(6);
+  document.getElementById('xmr-usd').textContent = xmrUsd.toFixed(4);
+
+  upd();
+}
+
+// ═══════════════════════════════════════
+// UI HELPERS
+// ═══════════════════════════════════════
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._tid);
+  t._tid = setTimeout(()=>t.classList.remove('show'), 2600);
+}
+
+function fly(txt, x, y) {
+  const el = document.createElement('div');
+  el.className = 'flt';
+  el.textContent = txt;
+  el.style.cssText = `left:${x}px;top:${y}px;transform:translateX(-50%)`;
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(), 950);
+}
+
+function connectWallet() {
+  if (window.solana?.isPhantom) {
+    window.solana.connect()
+      .then(r => {
+        const a = r.publicKey.toString();
+        document.getElementById('waddr').textContent = a.slice(0,8)+'…'+a.slice(-6);
+        toast('✓ Кошелёк подключён!');
+      })
+      .catch(()=>toast('Отменено'));
+  } else {
+    window.open('https://phantom.app','_blank');
+    toast('Установи Phantom кошелёк');
+  }
+}
+
+// ═══════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════
+
+load();
+renderFarm();
+renderUpgrades();
+renderStats();
+setInterval(tick, 400);
+</script>
+</body>
+</html>
