@@ -1,0 +1,43 @@
+version: "3.9"
+
+# ============================================================
+# Richa — XMRig Docker Compose
+#
+# BENCHMARK (no wallet needed):
+#   docker compose up benchmark
+#
+# REAL MINING (requires Monero wallet):
+#   WALLET_ADDRESS=your_xmr_address docker compose up miner
+#
+# Scale to N containers:
+#   docker compose up --scale benchmark=4 benchmark
+# ============================================================
+
+services:
+
+  # ── Pure hashrate benchmark — no pool, no wallet ──────────
+  benchmark:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: richa-xmrig:latest
+    shm_size: "256mb"
+    environment:
+      MODE: benchmark
+      BENCH_SIZE: "${BENCH_SIZE:-1M}"
+      THREADS: "${THREADS:-0}"
+    restart: "no"
+
+  # ── Real mining mode ──────────────────────────────────────
+  miner:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: richa-xmrig:latest
+    shm_size: "256mb"
+    environment:
+      MODE: mine
+      WALLET_ADDRESS: "${WALLET_ADDRESS:?Set WALLET_ADDRESS to your Monero address}"
+      POOL: "${POOL:-pool.supportxmr.com:3333}"
+      THREADS: "${THREADS:-0}"
+    restart: unless-stopped
