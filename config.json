@@ -14,7 +14,7 @@
         "yield": true,
         "asm": true,
         "argon2-impl": null,
-        "max-threads-hint": 100
+        "max-threads-hint": 30
     },
 
     "randomx": {
