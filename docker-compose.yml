@@ -1,43 +1,85 @@
 version: "3.9"
 
 # ============================================================
-# Richa — XMRig Docker Compose
+# Richa — Full Mining Stack
 #
-# BENCHMARK (no wallet needed):
-#   docker compose up benchmark
+# Services:
+#   xmrig-benchmark  — measure CPU hashrate (no wallet needed)
+#   xmrig-miner      — mine Monero (XMR), requires wallet
+#   bittensor-test   — Bittensor testnet demo (free, no TAO)
+#   bittensor-main   — Bittensor mainnet (real TAO required)
 #
-# REAL MINING (requires Monero wallet):
-#   WALLET_ADDRESS=your_xmr_address docker compose up miner
-#
-# Scale to N containers:
-#   docker compose up --scale benchmark=4 benchmark
+# Quick start:
+#   docker compose up xmrig-benchmark          # test hashrate
+#   docker compose up bittensor-test           # AI node demo
+#   WALLET_ADDRESS=<xmr> docker compose up xmrig-miner
 # ============================================================
 
+# ── Shared build args ────────────────────────────────────────
+x-xmrig-env: &xmrig-env
+  MAX_CPU_USAGE: "${MAX_CPU_USAGE:-30}"
+  THREADS: "${THREADS:-0}"
+
+# ── XMRig services ───────────────────────────────────────────
 services:
 
-  # ── Pure hashrate benchmark — no pool, no wallet ──────────
-  benchmark:
+  xmrig-benchmark:
     build:
       context: .
       dockerfile: Dockerfile
     image: richa-xmrig:latest
     shm_size: "256mb"
     environment:
+      <<: *xmrig-env
       MODE: benchmark
       BENCH_SIZE: "${BENCH_SIZE:-1M}"
-      THREADS: "${THREADS:-0}"
     restart: "no"
 
-  # ── Real mining mode ──────────────────────────────────────
-  miner:
+  xmrig-miner:
     build:
       context: .
       dockerfile: Dockerfile
     image: richa-xmrig:latest
     shm_size: "256mb"
     environment:
+      <<: *xmrig-env
       MODE: mine
-      WALLET_ADDRESS: "${WALLET_ADDRESS:?Set WALLET_ADDRESS to your Monero address}"
+      WALLET_ADDRESS: "${WALLET_ADDRESS:?Set WALLET_ADDRESS=your_xmr_address}"
       POOL: "${POOL:-pool.supportxmr.com:3333}"
-      THREADS: "${THREADS:-0}"
     restart: unless-stopped
+
+  # ── Bittensor — AI network node ──────────────────────────────
+
+  bittensor-test:
+    build:
+      context: ./bittensor
+      dockerfile: Dockerfile
+    image: richa-bittensor:latest
+    environment:
+      NETWORK: test
+      WALLET_NAME: "${BT_WALLET:-richa}"
+      HOTKEY_NAME: "${BT_HOTKEY:-default}"
+      NETUID: "${BT_NETUID:-1}"
+    volumes:
+      # Wallet persists between runs — never lose your keys
+      - bittensor-wallet:/root/.bittensor
+    restart: "no"
+
+  bittensor-main:
+    build:
+      context: ./bittensor
+      dockerfile: Dockerfile
+    image: richa-bittensor:latest
+    environment:
+      NETWORK: main
+      WALLET_NAME: "${BT_WALLET:-richa}"
+      HOTKEY_NAME: "${BT_HOTKEY:-default}"
+      NETUID: "${BT_NETUID:-1}"
+    volumes:
+      - bittensor-wallet:/root/.bittensor
+    restart: unless-stopped
+
+# ── Named volumes ─────────────────────────────────────────────
+volumes:
+  bittensor-wallet:
+    driver: local
